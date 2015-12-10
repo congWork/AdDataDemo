@@ -1,0 +1,204 @@
+﻿
+<link href="~/Content/PagedList.css" rel="stylesheet" type="text/css" />
+
+@{
+    ViewBag.Title = "Index";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Ad Data List</h2>
+<div ng-app="myApp" ng-controller="myCtrl">
+   
+    <div class="form-inline">
+        <div class="form-group">
+            <label class="sr-only" for="startDatepicker">Start Datetime</label>
+            <input type="text" id="startDatepicker" ng-model="startDt" placeholder="Start">
+        </div>
+        <div class="form-group">
+            <label class="sr-only" for="endDatepicker">End Datetime</label>
+            <input type="text" id="endDatepicker" ng-model="endDt" placeholder="End">
+
+        </div>
+       
+        <div class="form-group">
+            <button class="btn btn-default" type="button" id="Go" ng-click="loadData()">Go!</button>
+        </div>
+
+    </div>
+    <div class="form-group">
+        <div class="radio">
+            <label>
+                <input type="radio" name="radioOptions" id="inlineRadio1" value="opt1" ng-model="filterSettings.selectedOpt" checked> A full list of the ads
+            </label>
+        </div>
+       <div class="radio">
+           <label>
+               <input type="radio" name="radioOptions" id="inlineRadio2" value="opt2" ng-model="filterSettings.selectedOpt"> Cover with Page Coverage 50% +
+           </label>
+       </div>
+     
+       
+    </div>
+    
+
+
+   
+
+    <div class="center-block" style="min-height:600px;margin:20px auto;">
+        <my-loading show="loading"></my-loading>
+        <table class="table table-striped">
+            <tr>
+                <td ng-click="order('AdId')">
+                    Ad ID
+                    <span class="glyphicon sort-icon" ng-show="predicate=='AdId'" ng-class="{'glyphicon-chevron-up':!reverse,'glyphicon-chevron-down':reverse}"></span>
+                </td>
+                <td ng-click="order('NumPages')">
+                    NumberPages
+                    <span class="glyphicon sort-icon" ng-show="predicate=='NumPages'" ng-class="{'glyphicon-chevron-up':!reverse,'glyphicon-chevron-down':reverse}"></span>
+                </td>
+                <td ng-click="order('Position')">Position<span class="glyphicon sort-icon" ng-show="predicate=='Position'" ng-class="{'glyphicon-chevron-up':!reverse,'glyphicon-chevron-down':reverse}"></span></td>
+                <td ng-click="order('Brand.BrandId')">Brand ID<span class="glyphicon sort-icon" ng-show="predicate=='Brand.BrandId'" ng-class="{'glyphicon-chevron-up':!reverse,'glyphicon-chevron-down':reverse}"></span></td>
+                <td ng-click="order('Brand.BrandName')">Brand Name<span class="glyphicon sort-icon" ng-show="predicate=='Brand.BrandName'" ng-class="{'glyphicon-chevron-up':!reverse,'glyphicon-chevron-down':reverse}"></span></td>
+            </tr>
+            
+            <tr ng-repeat="k in ads | orderBy:predicate:reverse">
+                <td>{{k.AdId}}</td>
+                <td>{{k.NumPages}}</td>
+                <td>{{k.Position}}</td>
+                <td>{{k.Brand.BrandId}}</td>
+                <td>{{k.Brand.BrandName}}</td>
+            </tr>
+
+        </table>
+        <div ng-show="ads.length<=0">
+            <p class="text-info">NO DATA!</p>
+        </div>
+    </div>
+
+   
+    <nav>
+        <ul class="pagination" ng-show="main.totalPages>1">
+            <li ng-show="main.page>1" ng-click="previousPage()">
+                <span aria-label="Previous">
+                    <span aria-hidden="true">&laquo;</span>
+                </span>
+            </li>
+            <li class="disabled">
+               <span>{{main.page+'/'+main.totalPages}}</span> 
+            </li>
+            
+            <li ng-show="main.page<main.totalPages" ng-click="nextPage()">
+                <span aria-label="Next">
+                    <span aria-hidden="true">&raquo;</span>
+                </span>
+            </li>
+        </ul>
+    </nav>
+
+
+   
+</div>
+   
+<a href="/" class="btn btn-default">Back</a>
+
+
+
+@section scripts{
+    <script type="text/javascript">
+        $(function () {
+           
+           //set up datepicker
+            $("#startDatepicker").datepicker({
+                minDate: new Date(2011, 0, 1),
+                maxDate: new Date(2011, 3, 1),
+                defaultDate: new Date(2011, 0, 1),
+                changeMonth: true,
+                numberOfMonths: 1,
+                onClose: function (selectedDate) {
+                    $("#endDatepicker").datepicker("option", "minDate", selectedDate);
+                }
+            });
+            $("#endDatepicker").datepicker({
+                minDate: new Date(2011, 0, 1),
+                maxDate: new Date(2011, 3, 1),
+                defaultDate: new Date(2011, 3, 1),
+                changeMonth: true,
+                numberOfMonths: 1,
+                onClose: function (selectedDate) {
+                    $("#startDatepicker").datepicker("option", "maxDate", selectedDate);
+                }
+            });  
+        });
+
+        //angularJs code
+        var app = angular.module("myApp", ['myLoadingSpinner']);
+        app.controller("myCtrl", function ($scope, $http) {
+            $scope.ads = [];
+            //default setting for the loading spinner, false is not showing the loading spinner
+            $scope.loading = false;
+            $scope.filterSettings = {
+                selectedOpt: "opt1"
+            }
+            $scope.main = {
+                page: 1,
+                totalPages:1
+            };
+            $scope.startDt = '';
+            $scope.endDt = '';
+            $scope.predicate = '';
+            $scope.reverse = false;
+            //order function for sorting
+            $scope.order = function (predicate) {
+                $scope.reverse = ($scope.predicate === predicate) ? !$scope.reverse : false;
+                $scope.predicate = predicate;
+            };
+            //loading page data for each list, opt2 is for a list of ads which appeared in the “Cover” position with 50%+ page coverage
+            //the default one is for a full list of ads
+            $scope.loadData = function () {
+                $scope.predicate = '';
+                $scope.reverse = false;
+                $scope.loading = true;
+                var data = {};
+                switch ($scope.filterSettings.selectedOpt) {
+                    case "opt2":
+                        data = { 'startDatetime': $scope.startDt, 'endDatetime': $scope.endDt, 'page': $scope.main.page, 'selectedOption': $scope.filterSettings.selectedOpt };
+                        break;
+                    default:
+                        data = { 'startDatetime': $scope.startDt, 'endDatetime': $scope.endDt, 'page': $scope.main.page };
+                        break;
+                }
+                //post data back to the back-end and get data
+                $http.post("/adData/ListDataForDatetimeRange", data).then(function (d) {
+                    if (d.data != null && d.data.MyData != null) {
+                        $scope.ads = d.data.MyData;
+                    }
+                  
+                    
+                    $scope.main.totalPages = d.data.TotalPages;
+                    $scope.main.page = d.data.CurrentPage;
+                   
+                }, function (err) {
+                    alert("end with errors:"+err);
+                    console.log(err);
+                }).finally(function () {
+                    $scope.loading = false;
+                });
+            };
+               
+            $scope.nextPage = function () {
+                if ($scope.main.page < $scope.main.totalPages) {
+                    $scope.main.page++;
+                    $scope.loadData();
+                }
+            };
+            $scope.previousPage = function () {
+                if ($scope.main.page > 1) {
+                    $scope.main.page--;
+                    $scope.loadData();
+                }
+            };    
+        });
+
+    </script>
+ 
+}

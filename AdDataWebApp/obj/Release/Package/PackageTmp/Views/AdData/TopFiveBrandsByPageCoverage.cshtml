@@ -1,0 +1,33 @@
+﻿@model IEnumerable<AdDataWebApp.Models.VmTopFiveBrands>
+@{
+    ViewBag.Title = "TopFiveBrandsByPageCoverage";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>TopFiveBrandsByPageCoverage</h2>
+
+<table class="table">
+    <tr>
+        <th>
+            @Html.DisplayNameFor(model => model.TotalPageCoverage)
+        </th>
+        <th>
+            @Html.DisplayNameFor(model => model.BrandName)
+        </th>
+    </tr>
+
+    @foreach (var item in Model)
+    {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.TotalPageCoverage)
+            </td>
+           
+            <td>
+                @Html.DisplayFor(modelItem => item.BrandName)
+            </td>
+        </tr>
+    }
+
+</table>
+<a href="/" class="btn btn-default">Back</a>
